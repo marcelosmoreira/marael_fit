@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gerenciar Usuários – Marael Fit</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css" rel="stylesheet" />
+</head>
+<body class="d-flex flex-column" style="min-height: 100vh; background: linear-gradient(135deg, #1e1e1e 0%, #414141 100%);">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <div class="container d-flex justify-content-between align-items-center">
+      <a class="navbar-brand d-flex align-items-center fw-bold" href="#">
+        <i class="fas fa-dumbbell me-2 text-warning"></i>
+        MARAEL FIT
+      </a>
+      <div class="d-flex align-items-center">
+        <button type="button" class="btn btn-outline-secondary me-2" data-bs-toggle="tooltip" title="Voltar" onclick="window.location.href='pagina_principal';">
+          <i class="fas fa-arrow-left"></i>
+        </button>
+        <a href="/logout" class="btn btn-outline-danger logout-btn" data-bs-toggle="tooltip" title="Sair da sessão">
+          <i class="fas fa-sign-out-alt"></i>
+        </a>
+      </div>
+    </div>
+  </nav>
+  <main class="flex-grow-1 d-flex justify-content-center align-items-center px-3 py-5 text-white">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+          <div class="text-center mb-4">
+            <h1 class="fw-bold"><i class="fas fa-users-cog me-2"></i>Gerenciar Usuários</h1>
+          </div>
+          <div class="card bg-dark text-white shadow-lg rounded-4">
+            <div class="card-body p-4">
+              {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                  {% for category, message in messages %}
+                    <div class="alert alert-{{category}} alert-dismissible fade show" role="alert">
+                      {{ message }}
+                      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                  {% endfor %}
+                {% endif %}
+              {% endwith %}
+              <form method="POST" novalidate>
+                <div class="form-floating mb-3">
+                  <input type="text" class="form-control bg-secondary text-white border-0" id="usuario" name="usuario" placeholder="Usuário" required>
+                  <label for="usuario"><i class="bi bi-person-fill me-1"></i>Usuário</label>
+                  <div class="invalid-feedback">Por favor, preencha o nome do usuário.</div>
+                </div>
+                <div class="form-floating mb-4">
+                  <input type="password" class="form-control bg-secondary text-white border-0" id="senha" name="senha" placeholder="Senha" required>
+                  <label for="senha"><i class="bi bi-key-fill me-1"></i>Senha</label>
+                  <div class="invalid-feedback">Por favor, preencha a senha.</div>
+                </div>
+                <button type="submit" class="btn btn-warning w-100 mb-3 text-dark fw-bold">
+                  <i class="fas fa-user-plus me-1"></i>Adicionar Usuário
+                </button>
+              </form>
+              <h5 class="text-white mb-3">Usuários cadastrados:</h5>
+              <ul class="list-group bg-secondary rounded-3 mb-0">
+                {% for usuario, senha in usuarios.items() %}
+                  <li class="list-group-item bg-secondary text-white d-flex justify-content-between align-items-center border-0">
+                    {{ usuario }}
+                    <form method="POST" action="{{ url_for('remover_usuario_route', usuario=usuario) }}" onsubmit="return confirm('Tem certeza que deseja remover o usuário {{ user }}?');">
+                      <button type="submit" class="btn btn-danger btn-sm">
+                        <i class="fas fa-trash-alt"></i> Remover
+                      </button>
+                    </form>
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer class="bg-dark text-white text-center py-3 mt-auto">
+    &copy; 2025 Marael Fit - Todos os direitos reservados
+  </footer>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{{ url_for('static', filename='js/sessao.js') }}"></script>
+</body>
+</html>
