@@ -1,8 +1,11 @@
 import uuid
 from datetime import datetime, timedelta, timezone
 from flask import render_template, request, redirect, url_for, flash, session
-from app import app
+from app import app, db
 from app.model import usuarios
+from app.model.aluno import Aluno
+from app.model.pagamento import Pagamento
+from sqlalchemy.orm import joinedload
 
 sessoes_ativas = {}
 session_TIMEOUT = timedelta(minutes=30)
@@ -85,30 +88,160 @@ def pagina_principal():
     usuario = sessoes_ativas[token]['usuario']
     return render_template('pagina_principal.html', usuario=usuario)
 
-@app.route("/cadastrar_aluno")
+@app.route("/cadastrar_aluno", methods=['GET', 'POST'])
 @login_required
 def cadastrar_aluno():
+    if request.method == 'POST':
+        nome = request.form.get('nome')
+        cpf = request.form.get('cpf')
+        endereco = request.form.get('endereco')
+        cidade = request.form.get('cidade')
+        estado = request.form.get('estado')
+        telefone = request.form.get('telefone')
+
+        cpf_existente = Aluno.query.filter_by(cpf=cpf).first()
+        if cpf_existente:
+            flash("CPF já cadastrado para outro aluno.", "danger")
+            return redirect(url_for('cadastrar_aluno'))
+
+        try:
+            novo_aluno = Aluno(
+                nome=nome,
+                cpf=cpf,
+                endereco=endereco,
+                cidade=cidade,
+                estado=estado,
+                telefone=telefone
+            )
+
+            db.session.add(novo_aluno)
+            db.session.commit()
+
+            valor_plano = 150.0
+            Pagamento.registrar_pagamento(novo_aluno.id_aluno, valor_plano, "dinheiro")
+
+            flash("Aluno cadastrado com sucesso!", "success")
+            return redirect(url_for('ficha_aluno'))
+
+        except Exception as erro:
+            db.session.rollback()
+            flash(f"Erro ao cadastrar aluno: {erro}", "danger")
+            return redirect(url_for('cadastrar_aluno'))
     return render_template("cadastrar_aluno.html")
 
-@app.route("/consulta_aluno")
-@login_required
-def consulta_aluno():
-    return render_template("consulta_aluno.html")
 
-@app.route("/painel_financeiro")
-@login_required
-def painel_financeiro():
-    return render_template("painel_financeiro.html")
+from sqlalchemy.sql import exists, and_
+from datetime import date
 
-@app.route("/incluir_pagamento")
+@app.route('/ficha_aluno')
 @login_required
-def incluir_pagamento():
-    return render_template("incluir_pagamento.html")
+def ficha_aluno():
+    query = request.args.get('query', '').strip()
+    status = request.args.get('status', '').strip()
 
-@app.route("/consultar_pagamento")
+    filtros = []
+    if query:
+        filtros.append(Aluno.nome.ilike(f'{query}%'))
+    if status:
+        filtros.append(Aluno.status == status)
+
+    if filtros:
+        alunos = Aluno.query.filter(*filtros).all()
+    else:
+        alunos = Aluno.query.all()
+
+    return render_template('ficha_aluno.html', alunos=alunos, query=query, status=status)
+
+@app.route('/aluno/<int:id_aluno>')
 @login_required
-def consultar_pagamento():
-    return render_template("consultar_pagamento.html")
+def detalhes_aluno(id_aluno):
+    aluno = Aluno.query.filter_by(id_aluno=id_aluno).first()
+
+    if not aluno:
+        return render_template('ficha_aluno.html', alunos=[], query='')
+
+    return render_template('detalhes_aluno.html', aluno=aluno)
+
+@app.route('/aluno/editar/<int:id_aluno>', methods=['GET', 'POST'])
+@login_required
+def editar_aluno(id_aluno):
+    aluno = Aluno.query.get(id_aluno)
+    if not aluno:
+        flash('Aluno não encontrado.', 'danger')
+        return redirect(url_for('ficha_aluno'))
+
+    if request.method == 'POST':
+        try:
+            aluno.nome = request.form['nome']
+            aluno.cpf = request.form['cpf']
+            aluno.endereco = request.form['endereco']
+            aluno.cidade = request.form['cidade']
+            aluno.estado = request.form['estado'].upper()
+            aluno.telefone = request.form['telefone']
+            aluno.data_matricula = datetime.strptime(request.form['data_matricula'], '%Y-%m-%d').date()
+            aluno.data_vencimento = datetime.strptime(request.form['data_vencimento'], '%Y-%m-%d').date()
+
+            status = request.form['status']
+            aluno.status = status
+
+            if status == 'Ativo':
+                aluno.data_desligamento = None
+            else:
+                if aluno.data_desligamento is None:
+                    aluno.data_desligamento = datetime.today().date()
+
+            db.session.commit()
+            flash('Dados do aluno atualizados com sucesso.', 'success')
+            return redirect(url_for('ficha_aluno'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao atualizar aluno: {e}', 'danger')
+
+    return render_template('editar_aluno.html', aluno=aluno)
+
+@app.route('/financeiro')
+def financeiro():
+    return render_template('financeiro.html')
+
+
+@app.route('/pagamento/novo', methods=['GET', 'POST'])
+@login_required
+def novo_pagamento():
+    if request.method == 'POST':
+        aluno = request.form['aluno_nome']
+        data_ven = datetime.strptime(request.form['data_vencimento'], '%Y-%m-%d').date()
+        valor = float(request.form['valor'])
+        status = request.form['status']
+
+        novo = Pagamento(aluno_nome=aluno, data_vencimento=data_ven, valor=valor, status=status)
+        db.session.add(novo)
+        db.session.commit()
+        return redirect(url_for('financeiro'))
+
+    return render_template('novo_pagamento.html')
+
+@app.route('/pagamento/editar/<int:id>', methods=['GET', 'POST'])
+@login_required
+def editar_pagamento(id):
+    pagamento = Pagamento.query.get_or_404(id)
+
+    if request.method == 'POST':
+        pagamento.aluno_nome = request.form['aluno_nome']
+        pagamento.data_vencimento = datetime.strptime(request.form['data_vencimento'], '%Y-%m-%d').date()
+        pagamento.valor = float(request.form['valor'])
+        pagamento.status = request.form['status']
+        db.session.commit()
+        return redirect(url_for('financeiro'))
+
+    return render_template('editar_pagamento.html', pagamento=pagamento)
+
+@app.route('/pagamento/excluir/<int:id>', methods=['POST'])
+@login_required
+def excluir_pagamento(id):
+    pagamento = Pagamento.query.get_or_404(id)
+    db.session.delete(pagamento)
+    db.session.commit()
+    return redirect(url_for('financeiro'))
 
 @app.route("/usuarios", methods=['GET', 'POST'])
 @login_required
@@ -119,7 +252,6 @@ def gerenciar_usuarios():
         novo_usuario = request.form.get('usuario', '').strip().lower()
         nova_senha = request.form.get('senha', '').strip()
 
-        # Validações
         if len(usuarios_armazenados) >= 3:
             flash('Limite de 3 usuários atingido.', 'warning')
         elif not novo_usuario or not nova_senha:

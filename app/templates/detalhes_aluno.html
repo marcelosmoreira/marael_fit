@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Detalhes do Aluno – Marael Fit</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css" rel="stylesheet" />
+  <link href="{{ url_for('static', filename='css/style-form.css') }}" rel="stylesheet" />
+</head>
+<body class="d-flex flex-column" style="min-height: 100vh; background: linear-gradient(135deg, #1e1e1e 0%, #414141 100%);">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <div class="container d-flex justify-content-between align-items-center">
+      <a class="navbar-brand d-flex align-items-center fw-bold" href="#">
+        <i class="fas fa-dumbbell me-2 text-warning"></i>
+        MARAEL FIT
+      </a>
+      <div class="d-flex align-items-center">
+        <button type="button" class="btn btn-outline-secondary me-2" data-bs-toggle="tooltip" title="Voltar" aria-label="Voltar" onclick="history.back();">
+          <i class="fas fa-arrow-left"></i>
+        </button>
+        <a href="/logout" class="btn btn-outline-danger logout-btn" data-bs-toggle="tooltip" title="Sair da sessão" aria-label="Sair da sessão">
+          <i class="fas fa-sign-out-alt"></i>
+        </a>
+      </div>
+    </div>
+  </nav>
+  <main class="flex-grow-1 d-flex justify-content-center align-items-center px-3 py-5 text-white">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+          <div class="text-center mb-4">
+            <h1 class="fw-bold"><i class="fas fa-id-card me-2"></i>Detalhes do Aluno</h1>
+          </div>
+          <div class="card bg-dark text-white shadow-lg rounded-4">
+            <div class="card-body p-4">
+              {% if aluno %}
+              <ul class="list-group list-group-flush">
+                <li class="list-group-item bg-dark text-white"><strong>ID do Aluno:</strong> {{ aluno.id_aluno }}</li>
+                <li class="list-group-item bg-dark text-white"><strong>Nome Completo:</strong> {{ aluno.nome }}</li>
+                <li class="list-group-item bg-dark text-white"><strong>CPF:</strong> {{ aluno.cpf }}</li>
+                <li class="list-group-item bg-dark text-white"><strong>Endereço:</strong> {{ aluno.endereco }}</li>
+                <li class="list-group-item bg-dark text-white"><strong>Cidade:</strong> {{ aluno.cidade }}</li>
+                <li class="list-group-item bg-dark text-white"><strong>Estado:</strong> {{ aluno.estado }}</li>
+                <li class="list-group-item bg-dark text-white"><strong>Telefone:</strong> {{ aluno.telefone }}</li>
+                <li class="list-group-item bg-dark text-white"><strong>Data de Matrícula:</strong> {{ aluno.data_matricula.strftime('%d/%m/%Y') }}</li>
+                <li class="list-group-item bg-dark text-white"><strong>Data de Vencimento:</strong> {{ aluno.data_vencimento.strftime('%d/%m/%Y') }}</li>
+                <li class="list-group-item bg-dark text-white">
+                  <strong>Data de Desligamento:</strong>
+                  {{ aluno.data_desligamento.strftime('%d/%m/%Y') if aluno.data_desligamento else '-' }}
+                </li>
+                <li class="list-group-item bg-dark text-white">
+                  <strong>Status:</strong>
+                  {% if aluno.status == 'Ativo' %}
+                    <span class="badge bg-success ms-2">Ativo</span>
+                  {% elif aluno.status == 'Inativo' %}
+                    <span class="badge bg-danger ms-2">Inativo</span>
+                  {% else %}
+                    <span class="badge bg-secondary ms-2">{{ aluno.status }}</span>
+                  {% endif %}
+                </li>
+              </ul>
+              {% else %}
+                <div class="alert alert-danger mt-3">Aluno não encontrado.</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer class="bg-dark text-white text-center py-3 mt-auto">
+    &copy; 2025 Marael Fit - Todos os direitos reservados
+  </footer>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{{ url_for('static', filename='js/sessao.js') }}"></script>
+</body>
+</html>

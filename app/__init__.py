@@ -1,17 +1,18 @@
-import secrets
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+import secrets
 
+db = SQLAlchemy()
 app = Flask(__name__)
 
-secret_key = secrets.token_hex(16)
-
-with open('secret_key.txt', 'w') as f:
-    f.write(secret_key)
-
-app.config['SECRET_KEY'] = secret_key
-
+app.config['SECRET_KEY'] = secrets.token_hex(16)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///maraelfit.db'
-db = SQLAlchemy(app)
+
+db.init_app(app)
+
+with app.app_context():
+    from app.model.aluno import Aluno
+    from app.model.pagamento import Pagamento
+    db.create_all()
 
 from app import rotas

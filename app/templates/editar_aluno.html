@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Editar Aluno – Marael Fit</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css" rel="stylesheet" />
+  <link href="{{ url_for('static', filename='css/style-form.css') }}" rel="stylesheet" />
+</head>
+<body class="d-flex flex-column" style="min-height: 100vh; background: linear-gradient(135deg, #1e1e1e 0%, #414141 100%);">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <div class="container d-flex justify-content-between align-items-center">
+      <a class="navbar-brand d-flex align-items-center fw-bold" href="#">
+        <i class="fas fa-dumbbell me-2 text-warning"></i>
+        MARAEL FIT
+      </a>
+      <div class="d-flex align-items-center">
+        <button type="button" class="btn btn-outline-secondary me-2" data-bs-toggle="tooltip" title="Voltar" aria-label="Voltar" onclick="history.back();">
+          <i class="fas fa-arrow-left"></i>
+        </button>
+        <a href="/logout" class="btn btn-outline-danger logout-btn" data-bs-toggle="tooltip" title="Sair da sessão" aria-label="Sair da sessão">
+          <i class="fas fa-sign-out-alt"></i>
+        </a>
+      </div>
+    </div>
+  </nav>
+  <main class="flex-grow-1 d-flex justify-content-center align-items-center px-3 py-5 text-white">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+          <div class="text-center mb-4">
+            <h1 class="fw-bold"><i class="fas fa-edit me-2"></i>Editar Aluno</h1>
+          </div>
+          <div class="card bg-dark text-white shadow-lg rounded-4">
+            <div class="card-body p-4">
+              {% if aluno %}
+              <form id="editarAlunoForm" method="POST" action="{{ url_for('editar_aluno', id_aluno=aluno.id_aluno) }}">
+                <div class="mb-3">
+                  <label for="nome" class="form-label">Nome Completo</label>
+                  <input type="text" class="form-control" id="nome" name="nome" required value="{{ aluno.nome }}">
+                  <div class="invalid-feedback">Informe o nome completo.</div>
+                </div>
+                <div class="mb-3">
+                  <label for="cpf" class="form-label">CPF</label>
+                  <input type="text" class="form-control" id="cpf" name="cpf" required value="{{ aluno.cpf }}">
+                  <div class="invalid-feedback">CPF inválido.</div>
+                </div>
+                <div class="mb-3">
+                  <label for="endereco" class="form-label">Endereço</label>
+                  <input type="text" class="form-control" id="endereco" name="endereco" required value="{{ aluno.endereco }}">
+                  <div class="invalid-feedback">Informe o endereço.</div>
+                </div>
+                <div class="mb-3">
+                  <label for="cidade" class="form-label">Cidade</label>
+                  <input type="text" class="form-control" id="cidade" name="cidade" required value="{{ aluno.cidade }}">
+                  <div class="invalid-feedback">Informe a cidade.</div>
+                </div>
+                <div class="mb-3">
+                  <label for="estado" class="form-label">Estado</label>
+                  <input type="text" class="form-control" id="estado" name="estado" maxlength="2" required value="{{ aluno.estado }}">
+                  <div class="invalid-feedback">Informe o estado (UF) com 2 letras.</div>
+                </div>
+                <div class="mb-3">
+                  <label for="telefone" class="form-label">Telefone</label>
+                  <input type="text" class="form-control" id="telefone" name="telefone" required value="{{ aluno.telefone }}">
+                  <div class="invalid-feedback">Telefone inválido.</div>
+                </div>
+                <div class="mb-3">
+                  <label for="data_matricula" class="form-label">Data de Matrícula</label>
+                  <input type="date" class="form-control" id="data_matricula" name="data_matricula" required value="{{ aluno.data_matricula.strftime('%Y-%m-%d') }}">
+                  <div class="invalid-feedback">Informe a data de matrícula.</div>
+                </div>
+                <div class="mb-3">
+                  <label for="data_vencimento" class="form-label">Data de Vencimento</label>
+                  <input type="date" class="form-control" id="data_vencimento" name="data_vencimento" required value="{{ aluno.data_vencimento.strftime('%Y-%m-%d') }}">
+                  <div class="invalid-feedback">Informe a data de vencimento.</div>
+                </div>
+                <div class="mb-3">
+                  <label for="status" class="form-label">Status da Matrícula</label>
+                  <select class="form-select" id="status" name="status" required>
+                    <option value="Ativo" {% if aluno.status == 'Ativo' %}selected{% endif %}>Ativo</option>
+                    <option value="Inativo" {% if aluno.status == 'Inativo' %}selected{% endif %}>Inativo</option>
+                  </select>
+                  <div class="invalid-feedback">Selecione o status da matrícula.</div>
+                </div>
+                <button type="submit" class="btn btn-warning w-100 fw-bold">Salvar Alterações</button>
+              </form>
+              {% else %}
+                <div class="alert alert-danger mt-3">Aluno não encontrado.</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer class="bg-dark text-white text-center py-3 mt-auto">
+    &copy; 2025 Marael Fit - Todos os direitos reservados
+  </footer>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{{ url_for('static', filename='js/sessao.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/validar_edicao_aluno.js') }}"></script>
+</body>
+</html>
