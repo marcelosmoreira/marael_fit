@@ -1,11 +1,12 @@
 import uuid
 from datetime import datetime, timedelta, timezone
-from flask import render_template, request, redirect, url_for, flash, session
+from flask import abort, render_template, request, redirect, url_for, flash, session
 from app import app, db
 from app.model import usuarios
+from app.model import aluno
 from app.model.aluno import Aluno
-from app.model.pagamento import Pagamento
 from sqlalchemy.orm import joinedload
+from app import Pagamento
 
 sessoes_ativas = {}
 session_TIMEOUT = timedelta(minutes=30)
@@ -88,6 +89,8 @@ def pagina_principal():
     usuario = sessoes_ativas[token]['usuario']
     return render_template('pagina_principal.html', usuario=usuario)
 
+from datetime import datetime, timedelta, date
+
 @app.route("/cadastrar_aluno", methods=['GET', 'POST'])
 @login_required
 def cadastrar_aluno():
@@ -98,6 +101,13 @@ def cadastrar_aluno():
         cidade = request.form.get('cidade')
         estado = request.form.get('estado')
         telefone = request.form.get('telefone')
+        data_matricula_str = request.form.get('dataMatricula')
+
+        try:
+            data_matricula = datetime.strptime(data_matricula_str, '%Y-%m-%d').date()
+        except Exception:
+            flash("Data de matrícula inválida.", "danger")
+            return redirect(url_for('cadastrar_aluno'))
 
         cpf_existente = Aluno.query.filter_by(cpf=cpf).first()
         if cpf_existente:
@@ -117,8 +127,14 @@ def cadastrar_aluno():
             db.session.add(novo_aluno)
             db.session.commit()
 
-            valor_plano = 150.0
-            Pagamento.registrar_pagamento(novo_aluno.id_aluno, valor_plano, "dinheiro")
+            data_vencimento = data_matricula + timedelta(days=30)
+
+            novo_pagamento = Pagamento.cadastrar_pagamento(
+                id_aluno=novo_aluno.id_aluno,
+                valor=100.00,
+                data_vencimento=data_vencimento,
+                forma_pagamento='Não definida'
+            )
 
             flash("Aluno cadastrado com sucesso!", "success")
             return redirect(url_for('ficha_aluno'))
@@ -127,7 +143,9 @@ def cadastrar_aluno():
             db.session.rollback()
             flash(f"Erro ao cadastrar aluno: {erro}", "danger")
             return redirect(url_for('cadastrar_aluno'))
+
     return render_template("cadastrar_aluno.html")
+
 
 
 from sqlalchemy.sql import exists, and_
@@ -199,41 +217,123 @@ def editar_aluno(id_aluno):
 
     return render_template('editar_aluno.html', aluno=aluno)
 
+from flask import request, render_template
+from sqlalchemy import or_
+
 @app.route('/financeiro')
 def financeiro():
-    return render_template('financeiro.html')
+    busca = request.args.get('busca', '').strip()
+    filtro_status = request.args.get('status', 'todos')
+    ordenar_por = request.args.get('ordenar_por', '')
 
+    query = db.session.query(Pagamento, Aluno).join(Aluno, Pagamento.id_aluno == Aluno.id_aluno)
 
-@app.route('/pagamento/novo', methods=['GET', 'POST'])
+    if filtro_status != 'todos':
+        query = query.filter(Pagamento.status_pagamento == filtro_status)
+
+    if busca:
+        busca_like = f'%{busca}%'
+        query = query.filter(
+            or_(
+                Pagamento.id_pagamento.cast(db.String).ilike(busca_like),
+                Aluno.nome.ilike(busca_like),
+                Pagamento.id_aluno.cast(db.String).ilike(busca_like)
+            )
+        )
+
+    # Ordenação
+    if ordenar_por == 'id_asc':
+        query = query.order_by(Pagamento.id_pagamento.asc())
+    elif ordenar_por == 'id_desc':
+        query = query.order_by(Pagamento.id_pagamento.desc())
+    elif ordenar_por == 'data_asc':
+        query = query.order_by(Pagamento.data_vencimento.asc())
+    elif ordenar_por == 'data_desc':
+        query = query.order_by(Pagamento.data_vencimento.desc())
+    else:
+        query = query.order_by(Pagamento.id_pagamento.desc())
+
+    dados = query.all()
+    dados_formatados = []
+    for pagamento, aluno in dados:
+        dados_formatados.append({
+            'id_pagamento': pagamento.id_pagamento,
+            'id_aluno': pagamento.id_aluno,
+            'nome': aluno.nome,
+            'valor': pagamento.valor,
+            'data_pagamento': pagamento.data_pagamento,
+            'data_vencimento': pagamento.data_vencimento,
+            'forma_pagamento': pagamento.forma_pagamento,
+            'status_pagamento': pagamento.status_pagamento,
+        })
+
+    return render_template('financeiro.html', dados=dados_formatados, busca=busca, filtro_status=filtro_status)
+
+@app.route('/novo_pagamento', methods=['GET', 'POST'])
 @login_required
 def novo_pagamento():
     if request.method == 'POST':
-        aluno = request.form['aluno_nome']
-        data_ven = datetime.strptime(request.form['data_vencimento'], '%Y-%m-%d').date()
-        valor = float(request.form['valor'])
-        status = request.form['status']
+        try:
+            id_aluno_str = request.form.get('id_aluno')
+            if not id_aluno_str:
+                flash("Por favor, selecione um aluno.", "danger")
+                return redirect(url_for('novo_pagamento'))
 
-        novo = Pagamento(aluno_nome=aluno, data_vencimento=data_ven, valor=valor, status=status)
-        db.session.add(novo)
-        db.session.commit()
-        return redirect(url_for('financeiro'))
+            id_aluno = int(id_aluno_str)
+            valor = float(request.form['valor'])
+            data_vencimento = datetime.strptime(request.form['data_vencimento'], '%Y-%m-%d').date()
 
-    return render_template('novo_pagamento.html')
+            aluno = Aluno.query.get(id_aluno)
+            if not aluno:
+                flash("Aluno não encontrado.", "danger")
+                return redirect(url_for('novo_pagamento'))
 
-@app.route('/pagamento/editar/<int:id>', methods=['GET', 'POST'])
+            novo_pag = Pagamento(
+                id_aluno=id_aluno,
+                valor=valor,
+                data_vencimento=data_vencimento,
+                forma_pagamento='Não definida',
+                data_pagamento=None
+            )
+
+            db.session.add(novo_pag)
+            db.session.commit()
+
+            flash('Pagamento criado com sucesso!', 'success')
+            return redirect(url_for('financeiro'))
+
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao criar pagamento: {e}', 'danger')
+            return redirect(url_for('novo_pagamento'))
+
+    alunos = Aluno.query.order_by(Aluno.nome).all()
+    return render_template('novo_pagamento.html', alunos=alunos)
+
+
+@app.route('/pagamento/editar/<int:id_pagamento>', methods=['GET', 'POST'])
 @login_required
-def editar_pagamento(id):
-    pagamento = Pagamento.query.get_or_404(id)
+def editar_pagamento(id_pagamento):
+    pagamento = Pagamento.query.get_or_404(id_pagamento)
 
     if request.method == 'POST':
-        pagamento.aluno_nome = request.form['aluno_nome']
-        pagamento.data_vencimento = datetime.strptime(request.form['data_vencimento'], '%Y-%m-%d').date()
         pagamento.valor = float(request.form['valor'])
-        pagamento.status = request.form['status']
+        pagamento.data_vencimento = datetime.strptime(request.form['data_vencimento'], '%Y-%m-%d').date()
+
+        forma_pagamento = request.form['forma_pagamento']
+        pagamento.forma_pagamento = forma_pagamento.capitalize() if forma_pagamento.capitalize() in Pagamento.FORMAS_VALIDAS else 'Não definida'
+
+        if pagamento.forma_pagamento != 'Não definida':
+            pagamento.data_pagamento = datetime.strptime(request.form['data_pagamento'], '%Y-%m-%d').date()
+        else:
+            pagamento.data_pagamento = None
+
+        pagamento.atualizar_status()
         db.session.commit()
         return redirect(url_for('financeiro'))
-
-    return render_template('editar_pagamento.html', pagamento=pagamento)
+    
+    nome_aluno = pagamento.aluno.nome if pagamento.aluno else 'Aluno não encontrado'
+    return render_template('editar_pagamento.html', pagamento=pagamento, nome_aluno=nome_aluno)
 
 @app.route('/pagamento/excluir/<int:id>', methods=['POST'])
 @login_required

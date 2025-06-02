@@ -162,8 +162,10 @@ document.addEventListener('DOMContentLoaded', () => {
     form.classList.add('was-validated');
 
     if (valido) {
-      alert('Formulário válido e enviado com sucesso!');
-      form.submit();
+      if (confirm('Deseja enviar o cadastro?')) {
+        alert('Cadastro validado e enviado com sucesso!');
+        form.submit();
+      }
     }
   });
 });

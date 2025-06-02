@@ -1,5 +1,5 @@
 from app import db
-from datetime import date, timedelta
+from datetime import date
 
 class Pagamento(db.Model):
     __tablename__ = 'Pagamento'
@@ -11,86 +11,77 @@ class Pagamento(db.Model):
     data_pagamento = db.Column(db.Date, nullable=True)
     data_vencimento = db.Column(db.Date, nullable=False)
     forma_pagamento = db.Column(db.String(50), nullable=False)
-    status_pagamento = db.Column(db.String(10), nullable=False, default='pendente')
+    status_pagamento = db.Column(db.String(10), nullable=False, default='Pendente')
 
     aluno = db.relationship('Aluno', back_populates='pagamentos')
 
-    FORMAS_VALIDAS = ['Dinheiro', 'Cartão']
+    FORMAS_VALIDAS = ['Não definida', 'Dinheiro', 'Cartão']
 
-    def __init__(self, id_aluno, valor, data_vencimento, data_pagamento=None, forma_pagamento='Dinheiro'):
+    def __init__(self, id_aluno, valor, data_vencimento, data_pagamento=None, forma_pagamento='Não definida'):
         self.id_aluno = id_aluno
         self.valor = valor
         self.data_vencimento = data_vencimento
+        self.forma_pagamento = forma_pagamento.capitalize() if forma_pagamento.capitalize() in self.FORMAS_VALIDAS else 'Não definida'
         self.data_pagamento = data_pagamento
-        if forma_pagamento.capitalize() in self.FORMAS_VALIDAS:
-            self.forma_pagamento = forma_pagamento.capitalize()
-        else:
-            self.forma_pagamento = 'Dinheiro'
+        self.ajustar_data_pagamento()
         self.status_pagamento = self.calcular_status_pagamento()
 
+    def ajustar_data_pagamento(self):
+        if self.forma_pagamento == 'Não definida':
+            self.data_pagamento = None
+
     def calcular_status_pagamento(self):
+        forma = self.forma_pagamento.capitalize()
         hoje = date.today()
-        if self.data_pagamento:
-            return 'pago'
-        else:
-            dias_atraso = (hoje - self.data_vencimento).days
-            if dias_atraso > 30:
-                return 'atrasado'
+
+        if forma in ['Dinheiro', 'Cartão']:
+            return 'Pago'
+        elif forma == 'Não definida':
+            if self.data_vencimento < hoje:
+                return 'Atrasado'
             else:
-                return 'pendente'
+                return 'Pendente'
+        else:
+            if self.data_pagamento:
+                return 'Pago'
+            elif self.data_vencimento < hoje:
+                return 'Atrasado'
+            else:
+                return 'Pendente'
 
     def atualizar_status(self):
         self.status_pagamento = self.calcular_status_pagamento()
         db.session.commit()
 
     @staticmethod
-    def cadastrar_pagamento(id_aluno, valor, data_vencimento, data_pagamento=None, forma_pagamento='Dinheiro'):
+    def cadastrar_pagamento(id_aluno, valor, data_vencimento, data_pagamento=None, forma_pagamento='Não definida'):
         try:
-            forma_pagamento = forma_pagamento.capitalize()
-            if forma_pagamento not in Pagamento.FORMAS_VALIDAS:
-                forma_pagamento = 'Dinheiro'
-
-            novo_pagamento = Pagamento(id_aluno, valor, data_vencimento, data_pagamento, forma_pagamento)
-            db.session.add(novo_pagamento)
+            pagamento = Pagamento(
+                id_aluno=id_aluno,
+                valor=valor,
+                data_vencimento=data_vencimento,
+                data_pagamento=data_pagamento,
+                forma_pagamento=forma_pagamento
+            )
+            db.session.add(pagamento)
             db.session.commit()
-            return novo_pagamento
+            return pagamento
         except Exception as e:
             db.session.rollback()
             print(f"Erro ao cadastrar pagamento: {e}")
 
     @staticmethod
-    def atualizar_pagamento(id_pagamento, valor, data_vencimento, data_pagamento, forma_pagamento):
+    def atualizar_pagamento(id_pagamento, valor, data_vencimento, data_pagamento=None, forma_pagamento='Não definida'):
         try:
-            pagamento = db.session.query(Pagamento).filter(Pagamento.id_pagamento == id_pagamento).first()
+            pagamento = db.session.query(Pagamento).get(id_pagamento)
             if pagamento:
                 pagamento.valor = valor
                 pagamento.data_vencimento = data_vencimento
+                pagamento.forma_pagamento = forma_pagamento.capitalize() if forma_pagamento.capitalize() in Pagamento.FORMAS_VALIDAS else 'Não definida'
                 pagamento.data_pagamento = data_pagamento
-                forma_pagamento = forma_pagamento.capitalize()
-                if forma_pagamento not in Pagamento.FORMAS_VALIDAS:
-                    forma_pagamento = 'Dinheiro'
-                pagamento.forma_pagamento = forma_pagamento
-
+                pagamento.ajustar_data_pagamento()
                 pagamento.atualizar_status()
-
-                if pagamento.status_pagamento == 'pago':
-                    existe_proximo = db.session.query(Pagamento).filter(
-                        Pagamento.id_aluno == pagamento.id_aluno,
-                        Pagamento.data_vencimento > pagamento.data_vencimento
-                    ).first()
-
-                    if not existe_proximo:
-                        proximo_vencimento = pagamento.data_vencimento + timedelta(days=30)
-
-                        novo_pagamento = Pagamento(
-                            id_aluno=pagamento.id_aluno,
-                            valor=pagamento.valor,
-                            data_vencimento=proximo_vencimento,
-                            forma_pagamento=pagamento.forma_pagamento
-                        )
-                        db.session.add(novo_pagamento)
-                        db.session.commit()
-
+                db.session.commit()
                 return pagamento
             else:
                 print("Pagamento não encontrado.")
@@ -101,7 +92,7 @@ class Pagamento(db.Model):
     @staticmethod
     def deletar_pagamento(id_pagamento):
         try:
-            pagamento = db.session.query(Pagamento).filter(Pagamento.id_pagamento == id_pagamento).first()
+            pagamento = db.session.query(Pagamento).get(id_pagamento)
             if pagamento:
                 db.session.delete(pagamento)
                 db.session.commit()

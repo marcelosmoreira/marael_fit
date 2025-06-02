@@ -80,8 +80,10 @@ document.addEventListener('DOMContentLoaded', () => {
       valido = false;
     }
     if (valido) {
-      alert('Formulário válido e enviado com sucesso!');
-      form.submit();
+      if (confirm('Deseja salvar a edição?')) {
+        alert('Edição realizada com sucesso!');
+        form.submit();
+      }
     }
   });
 });
