@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -8,7 +9,9 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css" rel="stylesheet" />
 </head>
-<body class="d-flex flex-column" style="min-height: 100vh; background: linear-gradient(135deg, #1e1e1e 0%, #414141 100%);">
+
+<body class="d-flex flex-column"
+  style="min-height: 100vh; background: linear-gradient(135deg, #1e1e1e 0%, #414141 100%);">
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
     <div class="container d-flex justify-content-between align-items-center">
       <a class="navbar-brand d-flex align-items-center fw-bold" href="#">
@@ -16,7 +19,8 @@
         MARAEL FIT
       </a>
       <div class="d-flex align-items-center">
-        <button type="button" class="btn btn-outline-secondary me-2" data-bs-toggle="tooltip" title="Voltar" aria-label="Voltar" onclick="history.back();">
+        <button type="button" class="btn btn-outline-secondary me-2" data-bs-toggle="tooltip" title="Voltar"
+          aria-label="Voltar" onclick="history.back();">
           <i class="fas fa-arrow-left"></i>
         </button>
         <a href="/logout" class="btn btn-outline-danger logout-btn" data-bs-toggle="tooltip" title="Sair da sessão">
@@ -34,38 +38,43 @@
         <form method="POST" novalidate>
           <div class="mb-3">
             <label for="id_pagamento" class="form-label">ID do Pagamento</label>
-            <input type="text" class="form-control bg-secondary text-white" id="id_pagamento" name="id_pagamento" value="{{ pagamento.id_pagamento }}" readonly />
+            <input type="text" class="form-control bg-secondary text-white" id="id_pagamento" name="id_pagamento"
+              value="{{ pagamento.id_pagamento }}" readonly />
           </div>
           <div class="mb-3">
             <label for="aluno" class="form-label">Aluno (Nome Completo)</label>
-            <input type="text" class="form-control bg-secondary text-white" id="aluno" name="aluno_nome" value="{{ nome_aluno }}" readonly />
+            <input type="text" class="form-control bg-secondary text-white" id="aluno" name="aluno_nome"
+              value="{{ nome_aluno }}" readonly />
             <input type="hidden" name="id_aluno" value="{{ pagamento.id_aluno }}" />
           </div>
           <div class="mb-3">
             <label for="valor" class="form-label">Valor (R$)</label>
-            <input type="number" step="0.01" class="form-control bg-secondary text-white" id="valor" name="valor" value="{{ pagamento.valor }}" required />
+            <input type="number" step="0.01" class="form-control bg-secondary text-white" id="valor" name="valor"
+              value="{{ pagamento.valor }}" required />
           </div>
           <div class="mb-3">
             <label for="data_vencimento" class="form-label">Data de Vencimento</label>
-            <input type="date" class="form-control bg-secondary text-white" id="data_vencimento" name="data_vencimento" required
-              value="{{ pagamento.data_vencimento.isoformat() if pagamento.data_vencimento else '' }}" />
+            <input type="date" class="form-control bg-secondary text-white" id="data_vencimento" name="data_vencimento"
+              required value="{{ pagamento.data_vencimento.isoformat() if pagamento.data_vencimento else '' }}" />
           </div>
           <div class="mb-3">
             <label for="data_pagamento" class="form-label">Data do Pagamento</label>
-            <input type="date" class="form-control bg-secondary text-white" id="data_pagamento" name="data_pagamento" required
-              value="{{ pagamento.data_pagamento.isoformat() if pagamento.data_pagamento else '' }}" />
+            <input type="date" class="form-control bg-secondary text-white" id="data_pagamento" name="data_pagamento"
+              required value="{{ pagamento.data_pagamento.isoformat() if pagamento.data_pagamento else '' }}" />
           </div>
           <div class="mb-3">
             <label for="status_pagamento" class="form-label">Status do Pagamento</label>
-            <input type="text" class="form-control bg-secondary text-white" id="status_pagamento" name="status_pagamento" 
-                   value="{{ pagamento.status_pagamento }}" readonly />
+            <input type="text" class="form-control bg-secondary text-white" id="status_pagamento"
+              name="status_pagamento" value="{{ pagamento.status_pagamento }}" readonly />
           </div>
           <div class="mb-3">
             <label for="forma_pagamento" class="form-label">Forma de Pagamento</label>
             <select class="form-select bg-secondary text-white" id="forma_pagamento" name="forma_pagamento" required>
-              <option value="Não definida" {% if pagamento.forma_pagamento == 'Não definida' %}selected{% endif %}>Não definida</option>
-              <option value="Dinheiro" {% if pagamento.forma_pagamento == 'Dinheiro' %}selected{% endif %}>Dinheiro</option>
-              <option value="Cartão" {% if pagamento.forma_pagamento == 'Cartão' %}selected{% endif %}>Cartão</option>
+              <option value="Não definida" {% if pagamento.forma_pagamento=='Não definida' %}selected{% endif %}>Não
+                definida</option>
+              <option value="Dinheiro" {% if pagamento.forma_pagamento=='Dinheiro' %}selected{% endif %}>Dinheiro
+              </option>
+              <option value="Cartão" {% if pagamento.forma_pagamento=='Cartão' %}selected{% endif %}>Cartão</option>
             </select>
           </div>
           <button type="submit" class="btn btn-success w-100">
@@ -82,4 +91,5 @@
   <script src="{{ url_for('static', filename='js/validar_edicao_pagamento.js') }}"></script>
   <script src="{{ url_for('static', filename='js/sessao.js') }}"></script>
 </body>
+
 </html>

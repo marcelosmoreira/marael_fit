@@ -1,12 +1,15 @@
+import re
 import uuid
 from datetime import datetime, timedelta, timezone
-from flask import abort, render_template, request, redirect, url_for, flash, session
-from app import app, db
+from functools import wraps
+from flask import (
+    abort, jsonify, render_template, request, redirect, 
+    url_for, flash, session
+)
+from sqlalchemy import or_
+from app import app, db, Pagamento
 from app.model import usuarios
-from app.model import aluno
 from app.model.aluno import Aluno
-from sqlalchemy.orm import joinedload
-from app import Pagamento
 
 sessoes_ativas = {}
 session_TIMEOUT = timedelta(minutes=30)
@@ -26,7 +29,7 @@ def login_required(f):
 
         session_info = sessoes_ativas[token]
 
-        if session_info['ip'] != request.remote_addr or session_info['agente_usuario'] != request.headers.get('Agente-Usuario'):
+        if session_info['ip'] != request.remote_addr or session_info['agente_usuario'] != request.headers.get('User-Agent'):
             sessoes_ativas.pop(token, None)
             session.clear()
             flash('Sessão inválida. Faça login novamente.', 'danger')
@@ -59,7 +62,7 @@ def login():
             sessoes_ativas[token] = {
                 'usuario': usuario,
                 'ip': request.remote_addr,
-                'agente_usuario': request.headers.get('Agente-Usuario'),
+                'agente_usuario': request.headers.get('User-Agent'),
                 'ultimo_ativo': datetime.now(timezone.utc)
             }
             return redirect(url_for('pagina_principal'))
@@ -89,14 +92,25 @@ def pagina_principal():
     usuario = sessoes_ativas[token]['usuario']
     return render_template('pagina_principal.html', usuario=usuario)
 
-from datetime import datetime, timedelta, date
+@app.route('/verificar_cpf', methods=['POST'])
+@login_required
+def verificar_cpf():
+    cpf = request.json.get('cpf', '')
+    cpf = re.sub(r'\D', '', cpf)
+
+    cpf_existente = Aluno.query.filter_by(cpf=cpf).first()
+    if cpf_existente:
+        return jsonify({'existe': True})
+
+    return jsonify({'existe': False})
 
 @app.route("/cadastrar_aluno", methods=['GET', 'POST'])
 @login_required
 def cadastrar_aluno():
     if request.method == 'POST':
         nome = request.form.get('nome')
-        cpf = request.form.get('cpf')
+        cpf = request.form.get('cpf', '')
+        cpf = re.sub(r'\D', '', cpf)
         endereco = request.form.get('endereco')
         cidade = request.form.get('cidade')
         estado = request.form.get('estado')
@@ -106,12 +120,6 @@ def cadastrar_aluno():
         try:
             data_matricula = datetime.strptime(data_matricula_str, '%Y-%m-%d').date()
         except Exception:
-            flash("Data de matrícula inválida.", "danger")
-            return redirect(url_for('cadastrar_aluno'))
-
-        cpf_existente = Aluno.query.filter_by(cpf=cpf).first()
-        if cpf_existente:
-            flash("CPF já cadastrado para outro aluno.", "danger")
             return redirect(url_for('cadastrar_aluno'))
 
         try:
@@ -129,27 +137,22 @@ def cadastrar_aluno():
 
             data_vencimento = data_matricula + timedelta(days=30)
 
-            novo_pagamento = Pagamento.cadastrar_pagamento(
+            novo_pag = Pagamento.cadastrar_pagamento(
                 id_aluno=novo_aluno.id_aluno,
                 valor=100.00,
                 data_vencimento=data_vencimento,
                 forma_pagamento='Não definida'
             )
+            db.session.add(novo_pag)
+            db.session.commit()
 
-            flash("Aluno cadastrado com sucesso!", "success")
             return redirect(url_for('ficha_aluno'))
 
-        except Exception as erro:
+        except Exception:
             db.session.rollback()
-            flash(f"Erro ao cadastrar aluno: {erro}", "danger")
             return redirect(url_for('cadastrar_aluno'))
 
     return render_template("cadastrar_aluno.html")
-
-
-
-from sqlalchemy.sql import exists, and_
-from datetime import date
 
 @app.route('/ficha_aluno')
 @login_required
@@ -185,13 +188,16 @@ def detalhes_aluno(id_aluno):
 def editar_aluno(id_aluno):
     aluno = Aluno.query.get(id_aluno)
     if not aluno:
-        flash('Aluno não encontrado.', 'danger')
         return redirect(url_for('ficha_aluno'))
 
     if request.method == 'POST':
         try:
             aluno.nome = request.form['nome']
-            aluno.cpf = request.form['cpf']
+
+            cpf = request.form['cpf']
+            cpf = re.sub(r'\D', '', cpf)
+            aluno.cpf = cpf
+
             aluno.endereco = request.form['endereco']
             aluno.cidade = request.form['cidade']
             aluno.estado = request.form['estado'].upper()
@@ -209,18 +215,14 @@ def editar_aluno(id_aluno):
                     aluno.data_desligamento = datetime.today().date()
 
             db.session.commit()
-            flash('Dados do aluno atualizados com sucesso.', 'success')
             return redirect(url_for('ficha_aluno'))
-        except Exception as e:
+        except Exception:
             db.session.rollback()
-            flash(f'Erro ao atualizar aluno: {e}', 'danger')
 
     return render_template('editar_aluno.html', aluno=aluno)
 
-from flask import request, render_template
-from sqlalchemy import or_
-
 @app.route('/financeiro')
+@login_required
 def financeiro():
     busca = request.args.get('busca', '').strip()
     filtro_status = request.args.get('status', 'todos')
@@ -241,7 +243,6 @@ def financeiro():
             )
         )
 
-    # Ordenação
     if ordenar_por == 'id_asc':
         query = query.order_by(Pagamento.id_pagamento.asc())
     elif ordenar_por == 'id_desc':
@@ -309,7 +310,6 @@ def novo_pagamento():
 
     alunos = Aluno.query.order_by(Aluno.nome).all()
     return render_template('novo_pagamento.html', alunos=alunos)
-
 
 @app.route('/pagamento/editar/<int:id_pagamento>', methods=['GET', 'POST'])
 @login_required

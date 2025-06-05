@@ -110,6 +110,28 @@ document.addEventListener('DOMContentLoaded', () => {
   const vencimentoInicial = addDays(dataMatriculaInput.value, 30);
   dataVencimentoInput.value = formatDateBR(vencimentoInicial);
 
+  async function verificarCPFNoBanco(cpf) {
+    try {
+      const resposta = await fetch('/verificar_cpf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ cpf })
+      });
+
+      if (!resposta.ok) {
+        throw new Error('Erro ao verificar CPF no servidor.');
+      }
+
+      const resultado = await resposta.json();
+      return resultado.existe;
+    } catch (erro) {
+      console.error('Erro na verificação do CPF:', erro);
+      return false;
+    }
+  }
+
   form.addEventListener('submit', (event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -162,10 +184,20 @@ document.addEventListener('DOMContentLoaded', () => {
     form.classList.add('was-validated');
 
     if (valido) {
-      if (confirm('Deseja enviar o cadastro?')) {
-        alert('Cadastro validado e enviado com sucesso!');
-        form.submit();
-      }
+      verificarCPFNoBanco(cpfNumeros).then((cpfExiste) => {
+        if (cpfExiste) {
+          alert('CPF já cadastrado! Por favor, insira um CPF diferente.');
+          cpfInput.classList.add('is-invalid');
+          return;
+        }
+
+        cpfInput.classList.remove('is-invalid');
+
+        if (confirm('Deseja enviar o cadastro?')) {
+          alert('Cadastro validado e enviado com sucesso!');
+          form.submit();
+        }
+      });
     }
   });
 });

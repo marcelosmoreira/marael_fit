@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -9,7 +10,9 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css" rel="stylesheet" />
   <link href="{{ url_for('static', filename='css/style-form.css') }}" rel="stylesheet" />
 </head>
-<body class="d-flex flex-column" style="min-height: 100vh; background: linear-gradient(135deg, #1e1e1e 0%, #414141 100%);">
+
+<body class="d-flex flex-column"
+  style="min-height: 100vh; background: linear-gradient(135deg, #1e1e1e 0%, #414141 100%);">
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
     <div class="container d-flex justify-content-between align-items-center">
       <a class="navbar-brand d-flex align-items-center fw-bold" href="#">
@@ -17,7 +20,8 @@
         MARAEL FIT
       </a>
       <div class="d-flex align-items-center">
-        <button type="button" class="btn btn-outline-secondary me-2" data-bs-toggle="tooltip" title="Voltar" onclick="window.location.href='pagina_principal';">
+        <button type="button" class="btn btn-outline-secondary me-2" data-bs-toggle="tooltip" title="Voltar"
+          onclick="window.location.href='pagina_principal';">
           <i class="fas fa-arrow-left"></i>
         </button>
         <a href="/logout" class="btn btn-outline-danger logout-btn" data-bs-toggle="tooltip" title="Sair da sessão">
@@ -37,41 +41,49 @@
             <div class="card-body p-4">
               <form id="cadastroForm" novalidate method="POST" action="/cadastrar_aluno">
                 <div class="form-floating mb-3">
-                  <input type="text" class="form-control bg-secondary text-white border-0" id="nome" name="nome" placeholder="Nome Completo" required>
+                  <input type="text" class="form-control bg-secondary text-white border-0" id="nome" name="nome"
+                    placeholder="Nome Completo" required>
                   <label for="nome"><i class="bi bi-person-fill me-1"></i>Nome Completo</label>
                   <div class="invalid-feedback">Por favor, preencha o nome completo.</div>
                 </div>
                 <div class="form-floating mb-3">
-                  <input type="text" class="form-control bg-secondary text-white border-0" id="cpf" name="cpf" placeholder="CPF" required pattern="\d{3}\.?\d{3}\.?\d{3}-?\d{2}">
+                  <input type="text" class="form-control bg-secondary text-white border-0" id="cpf" name="cpf"
+                    placeholder="CPF" required pattern="\d{3}\.?\d{3}\.?\d{3}-?\d{2}">
                   <label for="cpf"><i class="bi bi-credit-card-2-front-fill me-1"></i>CPF</label>
                   <div class="invalid-feedback">Por favor, preencha um CPF válido.</div>
                 </div>
                 <div class="form-floating mb-3">
-                  <input type="text" class="form-control bg-secondary text-white border-0" id="endereco" name="endereco" placeholder="Endereço" required>
+                  <input type="text" class="form-control bg-secondary text-white border-0" id="endereco" name="endereco"
+                    placeholder="Endereço" required>
                   <label for="endereco"><i class="bi bi-geo-alt-fill me-1"></i>Endereço</label>
                   <div class="invalid-feedback">Por favor, preencha o endereço.</div>
                 </div>
                 <div class="form-floating mb-3">
-                  <input type="text" class="form-control bg-secondary text-white border-0" id="cidade" name="cidade" placeholder="Cidade" required>
+                  <input type="text" class="form-control bg-secondary text-white border-0" id="cidade" name="cidade"
+                    placeholder="Cidade" required>
                   <label for="cidade"><i class="bi bi-building me-1"></i>Cidade</label>
                   <div class="invalid-feedback">Por favor, preencha a cidade.</div>
                 </div>
                 <div class="form-floating mb-3">
-                  <input type="text" maxlength="2" class="form-control bg-secondary text-white border-0" id="estado" name="estado" placeholder="Estado" required pattern="[A-Za-z]{2}">
+                  <input type="text" maxlength="2" class="form-control bg-secondary text-white border-0" id="estado"
+                    name="estado" placeholder="Estado" required pattern="[A-Za-z]{2}">
                   <label for="estado"><i class="bi bi-flag-fill me-1"></i>Estado (UF)</label>
                   <div class="invalid-feedback">Por favor, preencha o estado com 2 letras.</div>
                 </div>
                 <div class="form-floating mb-3">
-                  <input type="tel" class="form-control bg-secondary text-white border-0" id="telefone" name="telefone" placeholder="Telefone" required pattern="[\d\s\-\+\(\)]{8,}">
+                  <input type="tel" class="form-control bg-secondary text-white border-0" id="telefone" name="telefone"
+                    placeholder="Telefone" required pattern="[\d\s\-\+\(\)]{8,}">
                   <label for="telefone"><i class="bi bi-telephone-fill me-1"></i>Telefone</label>
                   <div class="invalid-feedback">Por favor, preencha um telefone válido.</div>
                 </div>
                 <div class="form-floating mb-3">
-                  <input type="date" class="form-control bg-secondary text-white border-0" id="dataMatricula" name="dataMatricula" placeholder="Data de Matrícula" required>
+                  <input type="date" class="form-control bg-secondary text-white border-0" id="dataMatricula"
+                    name="dataMatricula" placeholder="Data de Matrícula" required>
                   <label for="dataMatricula"><i class="bi bi-calendar-check-fill me-1"></i>Data de Matrícula</label>
                 </div>
                 <div class="form-floating mb-4">
-                  <input type="text" readonly class="form-control bg-secondary text-white border-0" id="dataVencimento" name="dataVencimento" placeholder="Data de Vencimento">
+                  <input type="text" readonly class="form-control bg-secondary text-white border-0" id="dataVencimento"
+                    name="dataVencimento" placeholder="Data de Vencimento">
                   <label for="dataVencimento"><i class="bi bi-calendar-x-fill me-1"></i>Data de Vencimento</label>
                 </div>
                 <button type="submit" class="btn btn-warning w-100 text-dark fw-bold">
@@ -91,4 +103,5 @@
   <script src="{{ url_for('static', filename='js/sessao.js') }}"></script>
   <script src="{{ url_for('static', filename='js/validar_cadastro_aluno.js') }}"></script>
 </body>
+
 </html>

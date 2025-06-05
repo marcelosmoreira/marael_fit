@@ -1,14 +1,18 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
-  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Login – Marael Fit</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css" rel="stylesheet">
   <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
 </head>
-<body class="d-flex align-items-center" style="min-height:100vh; background:linear-gradient(135deg, #1e1e1e 0%, #414141 100%);">
+
+<body class="d-flex align-items-center"
+  style="min-height:100vh; background:linear-gradient(135deg, #1e1e1e 0%, #414141 100%);">
   <div class="container">
     <div class="row justify-content-center">
       <div class="col-md-5 col-lg-4">
@@ -23,16 +27,30 @@
             </div>
             <form method="POST">
               <div class="form-floating mb-3">
-                <input type="text" class="form-control bg-secondary text-white border-0" id="usuario" name="usuario" placeholder="Usuário" required>
+                <input type="text" class="form-control bg-secondary text-white border-0" id="usuario" name="usuario"
+                  placeholder="Usuário" required>
                 <label for="usuario"><i class="bi bi-person-fill me-1"></i>Usuário</label>
               </div>
               <div class="form-floating mb-4">
-                <input type="password" class="form-control bg-secondary text-white border-0" id="senha" name="senha" placeholder="Senha" required>
+                <input type="password" class="form-control bg-secondary text-white border-0" id="senha" name="senha"
+                  placeholder="Senha" required>
                 <label for="senha"><i class="bi bi-key-fill me-1"></i>Senha</label>
               </div>
               <button type="submit" class="btn btn-warning w-100 mb-3 text-dark">
                 <i class="fas fa-sign-in-alt me-1"></i>Entrar
               </button>
+              {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+              <div class="mb-3">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                  {{ message }}
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+              </div>
+              {% endif %}
+              {% endwith %}
             </form>
           </div>
         </div>
@@ -44,4 +62,5 @@
   </footer>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>
