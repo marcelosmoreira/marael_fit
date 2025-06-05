@@ -17,7 +17,12 @@ class Aluno(db.Model):
     data_desligamento = db.Column(db.Date, nullable=True)
     status = db.Column(db.String(10), nullable=False, default="Ativo")
 
-    pagamentos = db.relationship('Pagamento', back_populates='aluno', lazy=True)
+    pagamentos = db.relationship(
+        'Pagamento',
+        back_populates='aluno',
+        lazy=True,
+        cascade='all, delete-orphan'
+    )
 
     def __init__(self, nome, cpf, endereco, cidade, estado, telefone, data_matricula=None, data_vencimento=None, data_desligamento=None, status=None):
         self.nome = nome
@@ -31,33 +36,33 @@ class Aluno(db.Model):
         self.data_desligamento = data_desligamento
         self.status = status or ("Ativo" if data_desligamento is None else "Inativo")
 
-@staticmethod
-def cadastrar_aluno(nome, cpf, endereco, cidade, estado, telefone, data_matricula=None):
-    try:
-        existente = Aluno.buscar_por_cpf(cpf)
-        if existente:
-            print("Erro: CPF já cadastrado.")
-            return None
+    @staticmethod
+    def cadastrar_aluno(nome, cpf, endereco, cidade, estado, telefone, data_matricula=None):
+        try:
+            existente = Aluno.buscar_por_cpf(cpf)
+            if existente:
+                print("Erro: CPF já cadastrado.")
+                return None
 
-        novo_aluno = Aluno(nome, cpf, endereco, cidade, estado, telefone, data_matricula)
-        db.session.add(novo_aluno)
-        db.session.commit()
+            novo_aluno = Aluno(nome, cpf, endereco, cidade, estado, telefone, data_matricula)
+            db.session.add(novo_aluno)
+            db.session.commit()
 
-        data_vencimento = novo_aluno.data_matricula + timedelta(days=30)
-        VALOR_PADRAO = 100.00
-        from app.model import Pagamento
+            data_vencimento = novo_aluno.data_matricula + timedelta(days=30)
+            VALOR_PADRAO = 100.00
+            from app.model import Pagamento
 
-        pagamento = Pagamento.cadastrar_pagamento(
-            id_aluno=novo_aluno.id_aluno,
-            valor=VALOR_PADRAO,
-            data_vencimento=data_vencimento,
-        )
+            pagamento = Pagamento.cadastrar_pagamento(
+                id_aluno=novo_aluno.id_aluno,
+                valor=VALOR_PADRAO,
+                data_vencimento=data_vencimento,
+            )
 
-        return novo_aluno
+            return novo_aluno
 
-    except Exception as e:
-        db.session.rollback()
-        print(f"Erro ao cadastrar aluno: {e}")
+        except Exception as e:
+            db.session.rollback()
+            print(f"Erro ao cadastrar aluno: {e}")
 
     @staticmethod
     def atualizar_status_aluno(id_aluno, status_ativo: bool):

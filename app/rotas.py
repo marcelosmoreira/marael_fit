@@ -221,6 +221,15 @@ def editar_aluno(id_aluno):
 
     return render_template('editar_aluno.html', aluno=aluno)
 
+@app.route('/aluno/excluir/<int:id_aluno>', methods=['POST'])
+@login_required
+def excluir_aluno(id_aluno):
+    aluno = Aluno.query.get_or_404(id_aluno)
+    db.session.delete(aluno)
+    db.session.commit()
+    flash('Aluno excluído com sucesso.', 'success')
+    return redirect(url_for('ficha_aluno'))
+
 @app.route('/financeiro')
 @login_required
 def financeiro():
